@@ -6,7 +6,6 @@ import App from "./App";
 import "./index.css";
 import { initializeProducts } from "./services/productsService";
 
-// Inicializar productos en localStorage
 initializeProducts();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
