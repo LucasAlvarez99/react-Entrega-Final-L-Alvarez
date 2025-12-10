@@ -1,3 +1,4 @@
+// src/services/productsService.js
 import { 
   collection, 
   getDocs, 
@@ -10,32 +11,13 @@ import {
   where 
 } from "firebase/firestore";
 import { db } from "./firebase";
-import productsData from "../data/products.json";
 
 const COLLECTION_NAME = "products";
 
-// Inicializar Firestore con productos por defecto (solo ejecutar una vez)
+// Ya no necesitamos inicializar productos desde JSON
+// Los productos se crearán desde el panel de administración
 export const initializeProducts = async () => {
-  try {
-    const productsRef = collection(db, COLLECTION_NAME);
-    const snapshot = await getDocs(productsRef);
-    
-    // Si no hay productos en Firestore, cargar los datos iniciales
-    if (snapshot.empty) {
-      console.log("Inicializando productos en Firestore...");
-      
-      for (const product of productsData) {
-        await addDoc(productsRef, {
-          ...product,
-          createdAt: new Date().toISOString()
-        });
-      }
-      
-      console.log("Productos inicializados exitosamente!");
-    }
-  } catch (error) {
-    console.error("Error al inicializar productos:", error);
-  }
+  console.log("Firebase conectado. Los productos se gestionan desde el panel admin.");
 };
 
 // Obtener todos los productos

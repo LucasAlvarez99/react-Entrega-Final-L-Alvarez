@@ -9,6 +9,7 @@ import Card from "react-bootstrap/Card";
 import Alert from "react-bootstrap/Alert";
 import Table from "react-bootstrap/Table";
 import { addProduct } from "../services/productsService";
+import { seedProducts } from "../scripts/seedProducts";
 
 function AdminPage() {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ function AdminPage() {
 
   const [submitted, setSubmitted] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
+  const [loadingSeed, setLoadingSeed] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -64,12 +66,8 @@ function AdminPage() {
       return;
     }
 
-    // Crear URLs temporales para previsualización
     const imageUrls = files.map((file) => URL.createObjectURL(file));
     setPreviewImages(imageUrls);
-
-    // En producción, aquí subirías las imágenes a un servidor
-    // Por ahora usamos las URLs temporales
     setShowForm({
       ...showForm,
       images: imageUrls,
@@ -108,7 +106,6 @@ function AdminPage() {
     e.preventDefault();
 
     try {
-      // Preparar datos para guardar
       const newShow = {
         ...showForm,
         spaces: showForm.spaces.map((space) => ({
@@ -118,14 +115,12 @@ function AdminPage() {
         })),
       };
 
-      // Guardar en localStorage
       const savedProduct = await addProduct(newShow);
       
       console.log("Show creado exitosamente:", savedProduct);
       
       setSubmitted(true);
       
-      // Redirigir al inicio después de 2 segundos
       setTimeout(() => {
         navigate("/");
       }, 2000);
@@ -136,9 +131,37 @@ function AdminPage() {
     }
   };
 
+  const handleLoadSampleData = async () => {
+    if (window.confirm("¿Cargar productos de ejemplo en Firebase? Esto agregará 3 shows de muestra.")) {
+      setLoadingSeed(true);
+      try {
+        await seedProducts();
+        alert("✅ Productos de ejemplo cargados exitosamente!");
+        setTimeout(() => {
+          navigate("/");
+        }, 1000);
+      } catch (error) {
+        alert("❌ Error al cargar productos de ejemplo");
+        console.error(error);
+      } finally {
+        setLoadingSeed(false);
+      }
+    }
+  };
+
   return (
     <Container className="py-5">
-      <h2 className="text-center mb-4">Panel de Administración</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>Panel de Administración</h2>
+        <Button 
+          variant="info" 
+          onClick={handleLoadSampleData}
+          disabled={loadingSeed}
+        >
+          {loadingSeed ? "Cargando..." : "🌱 Cargar Datos de Ejemplo"}
+        </Button>
+      </div>
+      
       <p className="text-center text-muted mb-5">
         Crea y administra shows, entradas y merchandise
       </p>

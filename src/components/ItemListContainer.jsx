@@ -1,10 +1,11 @@
-
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import ItemList from "./ItemList";
 import { getProducts, getProductsByCategory } from "../services/productsService";
 import Container from "react-bootstrap/Container";
 import Spinner from "react-bootstrap/Spinner";
+import Button from "react-bootstrap/Button";
+import Card from "react-bootstrap/Card";
 
 function ItemListContainer({ greeting }) {
   const [products, setProducts] = useState([]);
@@ -33,6 +34,39 @@ function ItemListContainer({ greeting }) {
     fetchProducts();
   }, [categoryId]);
 
+  if (loading) {
+    return (
+      <Container className="text-center py-5">
+        <Spinner animation="border" variant="primary" />
+        <p className="mt-3">Cargando productos...</p>
+      </Container>
+    );
+  }
+
+  // Si no hay productos en absoluto (base de datos vacía)
+  if (!loading && products.length === 0 && !categoryId) {
+    return (
+      <Container className="py-5">
+        <Card className="shadow text-center py-5">
+          <Card.Body>
+            <div className="mb-4">
+              <i className="fas fa-box-open" style={{ fontSize: "5rem", color: "#ccc" }}></i>
+            </div>
+            <h2 className="mb-3">No hay shows disponibles</h2>
+            <p className="text-muted mb-4">
+              Aún no se han cargado shows en la base de datos.
+            </p>
+            <Link to="/admin">
+              <Button variant="primary" size="lg">
+                Ir al Panel Admin para Crear Shows
+              </Button>
+            </Link>
+          </Card.Body>
+        </Card>
+      </Container>
+    );
+  }
+
   return (
     <Container className="py-4">
       {greeting && (
@@ -50,17 +84,9 @@ function ItemListContainer({ greeting }) {
         </h3>
       )}
 
-      {loading ? (
-        <div className="text-center py-5">
-          <Spinner animation="border" variant="primary" />
-          <p className="mt-3">Cargando productos...</p>
-        </div>
-      ) : (
-        <ItemList products={products} />
-      )}
+      <ItemList products={products} />
     </Container>
   );
 }
 
 export default ItemListContainer;
-
