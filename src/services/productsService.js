@@ -1,3 +1,4 @@
+// src/services/productsService.js - VERSIÓN OPTIMIZADA
 import { 
   collection, 
   getDocs, 
@@ -8,37 +9,82 @@ import {
   query, 
   where,
   orderBy,
-  limit
+  limit,
+  startAfter
 } from "firebase/firestore";
 import { db } from "./firebase";
 
 const COLLECTION_NAME = "products";
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutos (antes era 5)
+const CACHE_KEY = "olimpo_products_cache";
+const CACHE_VERSION = "v1"; // Para invalidar cache si cambia estructura
 
-// Cache en memoria
-let productsCache = {
-  data: null,
-  timestamp: null
+// ===== CACHE CON LOCALSTORAGE =====
+const loadFromLocalStorage = () => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+    
+    const parsed = JSON.parse(cached);
+    
+    // Verificar versión del cache
+    if (parsed.version !== CACHE_VERSION) {
+      console.log("🗑️ Cache desactualizado, limpiando...");
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+    
+    // Verificar expiración
+    const isExpired = Date.now() - parsed.timestamp > CACHE_DURATION;
+    if (isExpired) {
+      console.log("⏰ Cache expirado");
+      return null;
+    }
+    
+    console.log(`📦 Productos desde localStorage (${parsed.data.length} items)`);
+    return parsed.data;
+    
+  } catch (error) {
+    console.warn("Error al leer cache:", error);
+    localStorage.removeItem(CACHE_KEY);
+    return null;
+  }
 };
 
-// Verificar si el cache es válido
-const isCacheValid = () => {
-  if (!productsCache.data || !productsCache.timestamp) return false;
-  return Date.now() - productsCache.timestamp < CACHE_DURATION;
+const saveToLocalStorage = (data) => {
+  try {
+    const cacheObject = {
+      version: CACHE_VERSION,
+      data,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
+    console.log(`💾 ${data.length} productos guardados en cache`);
+  } catch (error) {
+    console.warn("No se pudo guardar en localStorage:", error);
+  }
 };
 
-// Obtener todos los productos (con cache)
+// ===== OBTENER TODOS LOS PRODUCTOS (OPTIMIZADO) =====
 export const getProducts = async (useCache = true) => {
   try {
-    // Usar cache si está disponible y es válido
-    if (useCache && isCacheValid()) {
-      console.log("📦 Usando productos desde cache");
-      return productsCache.data;
+    // 1. Intentar cargar desde localStorage
+    if (useCache) {
+      const cached = loadFromLocalStorage();
+      if (cached) return cached;
     }
 
-    console.log("🔄 Obteniendo productos desde Firestore...");
+    // 2. Si no hay cache, cargar desde Firestore
+    console.log("🔄 Cargando productos desde Firestore...");
     const productsRef = collection(db, COLLECTION_NAME);
-    const q = query(productsRef, orderBy("createdAt", "desc"));
+    
+    // OPTIMIZACIÓN: Limitar a 50 productos y ordenar
+    const q = query(
+      productsRef, 
+      orderBy("createdAt", "desc"),
+      limit(50) // ⚡ Limitar cantidad de documentos
+    );
+    
     const snapshot = await getDocs(q);
     
     const products = snapshot.docs.map(doc => ({
@@ -46,44 +92,52 @@ export const getProducts = async (useCache = true) => {
       ...doc.data()
     }));
     
-    // Actualizar cache
-    productsCache = {
-      data: products,
-      timestamp: Date.now()
-    };
+    // 3. Guardar en cache
+    saveToLocalStorage(products);
     
-    console.log(`✅ ${products.length} productos obtenidos`);
+    console.log(`✅ ${products.length} productos cargados desde Firestore`);
     return products;
+    
   } catch (error) {
     console.error("❌ Error al obtener productos:", error);
-    // Si hay cache, devolverlo aunque esté expirado
-    if (productsCache.data) {
-      console.log("⚠️ Usando cache expirado por error");
-      return productsCache.data;
+    
+    // Fallback: intentar devolver cache aunque esté expirado
+    const expiredCache = localStorage.getItem(CACHE_KEY);
+    if (expiredCache) {
+      const { data } = JSON.parse(expiredCache);
+      console.log("⚠️ Usando cache expirado como fallback");
+      return data;
     }
+    
     return [];
   }
 };
 
-// Obtener productos por categoría (con cache)
+// ===== OBTENER PRODUCTOS POR CATEGORÍA (OPTIMIZADO) =====
 export const getProductsByCategory = async (categoryId) => {
   try {
-    // Intentar obtener del cache primero
-    if (isCacheValid()) {
-      const filtered = productsCache.data.filter(p => p.category === categoryId);
+    // 1. Intentar filtrar desde cache primero
+    const cached = loadFromLocalStorage();
+    if (cached) {
+      const filtered = cached.filter(p => p.category === categoryId);
       if (filtered.length > 0) {
-        console.log(`📦 Categoría "${categoryId}" desde cache`);
+        console.log(`📦 Categoría "${categoryId}" desde cache (${filtered.length} items)`);
         return filtered;
       }
     }
 
-    console.log(`🔄 Obteniendo categoría "${categoryId}" desde Firestore...`);
+    // 2. Si no hay cache, consultar Firestore
+    console.log(`🔄 Consultando categoría "${categoryId}" en Firestore...`);
     const productsRef = collection(db, COLLECTION_NAME);
+    
+    // IMPORTANTE: Esta query requiere índice compuesto en Firestore
     const q = query(
       productsRef, 
       where("category", "==", categoryId),
-      orderBy("date", "asc")
+      orderBy("date", "asc"),
+      limit(30)
     );
+    
     const snapshot = await getDocs(q);
     
     const products = snapshot.docs.map(doc => ({
@@ -93,25 +147,42 @@ export const getProductsByCategory = async (categoryId) => {
     
     console.log(`✅ ${products.length} productos en categoría "${categoryId}"`);
     return products;
+    
   } catch (error) {
     console.error("❌ Error al obtener productos por categoría:", error);
+    
+    // Si falla por falta de índice, intentar sin orderBy
+    if (error.code === 'failed-precondition') {
+      console.log("⚠️ Falta índice compuesto, consultando sin ordenar...");
+      const productsRef = collection(db, COLLECTION_NAME);
+      const q = query(
+        productsRef, 
+        where("category", "==", categoryId),
+        limit(30)
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+    
     return [];
   }
 };
 
-// Obtener un producto por ID (con cache)
+// ===== OBTENER UN PRODUCTO POR ID (OPTIMIZADO) =====
 export const getProductById = async (id) => {
   try {
-    // Buscar en cache primero
-    if (isCacheValid()) {
-      const cached = productsCache.data.find(p => p.id === id);
-      if (cached) {
+    // 1. Buscar en cache primero
+    const cached = loadFromLocalStorage();
+    if (cached) {
+      const found = cached.find(p => p.id === id);
+      if (found) {
         console.log(`📦 Producto ${id} desde cache`);
-        return cached;
+        return found;
       }
     }
 
-    console.log(`🔄 Obteniendo producto ${id} desde Firestore...`);
+    // 2. Si no está en cache, consultar Firestore
+    console.log(`🔄 Consultando producto ${id} en Firestore...`);
     const productRef = doc(db, COLLECTION_NAME, id);
     const snapshot = await getDoc(productRef);
     
@@ -131,7 +202,7 @@ export const getProductById = async (id) => {
   }
 };
 
-// Agregar un nuevo producto (invalida cache)
+// ===== AGREGAR PRODUCTO (INVALIDA CACHE) =====
 export const addProduct = async (product) => {
   try {
     const productsRef = collection(db, COLLECTION_NAME);
@@ -143,9 +214,8 @@ export const addProduct = async (product) => {
     
     const docRef = await addDoc(productsRef, newProduct);
     
-    // Invalidar cache
-    productsCache = { data: null, timestamp: null };
-    console.log("🗑️ Cache invalidado después de agregar producto");
+    // Invalidar cache para forzar recarga
+    clearCache();
     
     return {
       id: docRef.id,
@@ -157,15 +227,14 @@ export const addProduct = async (product) => {
   }
 };
 
-// Eliminar un producto (invalida cache)
+// ===== ELIMINAR PRODUCTO (INVALIDA CACHE) =====
 export const deleteProduct = async (id) => {
   try {
     const productRef = doc(db, COLLECTION_NAME, id);
     await deleteDoc(productRef);
     
     // Invalidar cache
-    productsCache = { data: null, timestamp: null };
-    console.log("🗑️ Cache invalidado después de eliminar producto");
+    clearCache();
     
     return true;
   } catch (error) {
@@ -174,17 +243,46 @@ export const deleteProduct = async (id) => {
   }
 };
 
-// Limpiar cache manualmente (útil para testing)
+// ===== LIMPIAR CACHE =====
 export const clearCache = () => {
-  productsCache = { data: null, timestamp: null };
-  console.log("🗑️ Cache limpiado manualmente");
+  localStorage.removeItem(CACHE_KEY);
+  console.log("🗑️ Cache limpiado");
 };
 
-// Inicialización (ya no es necesaria)
+// ===== INICIALIZACIÓN =====
 export const initializeProducts = async () => {
   console.log("🔥 Firebase conectado");
-  // Pre-cargar productos en segundo plano para mejorar UX inicial
-  getProducts(false).catch(() => {
-    console.log("⚠️ No se pudieron pre-cargar productos");
-  });
+  
+  // Pre-cargar productos en segundo plano si no hay cache
+  const cached = loadFromLocalStorage();
+  if (!cached) {
+    console.log("📡 Pre-cargando productos...");
+    getProducts(false).catch(() => {
+      console.log("⚠️ No se pudieron pre-cargar productos");
+    });
+  } else {
+    console.log("✅ Productos disponibles en cache local");
+  }
+};
+
+// ===== FUNCIÓN DE UTILIDAD: OBTENER ESTADÍSTICAS =====
+export const getCacheStats = () => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return { hasCache: false };
+    
+    const parsed = JSON.parse(cached);
+    const ageMinutes = Math.floor((Date.now() - parsed.timestamp) / 60000);
+    const isExpired = ageMinutes > 30;
+    
+    return {
+      hasCache: true,
+      itemCount: parsed.data.length,
+      ageMinutes,
+      isExpired,
+      version: parsed.version
+    };
+  } catch {
+    return { hasCache: false };
+  }
 };

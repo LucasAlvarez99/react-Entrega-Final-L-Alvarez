@@ -2,6 +2,7 @@ import { useContext, useState } from "react";
 import { Link } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { createOrder } from "../services/ordersService";
+import PaymentForm from "./PaymentForm";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
@@ -11,7 +12,6 @@ import Table from "react-bootstrap/Table";
 import Badge from "react-bootstrap/Badge";
 import Alert from "react-bootstrap/Alert";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
-import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
 import Spinner from "react-bootstrap/Spinner";
 
@@ -28,6 +28,7 @@ function Cart() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderId, setOrderId] = useState("");
+  const [orderDate, setOrderDate] = useState("");
   const [loading, setLoading] = useState(false);
   
   const [buyer, setBuyer] = useState({
@@ -37,28 +38,20 @@ function Cart() {
     emailConfirm: ""
   });
 
-  const handleInputChange = (e) => {
-    setBuyer({
-      ...buyer,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleCheckout = async (e) => {
-    e.preventDefault();
-    
-    // Validar que los emails coincidan
-    if (buyer.email !== buyer.emailConfirm) {
-      alert("Los emails no coinciden");
-      return;
-    }
-
+  const handleCheckout = async (paymentData) => {
     setLoading(true);
 
     try {
-      const id = await createOrder({}, buyer, cart);
+      // Crear orden con datos de pago
+      const orderData = {
+        paymentMethod: paymentData.method,
+        ...(paymentData.card && { cardInfo: paymentData.card })
+      };
+
+      const id = await createOrder(orderData, buyer, cart);
       
       setOrderId(id);
+      setOrderDate(new Date().toLocaleString('es-AR'));
       setOrderSuccess(true);
       setShowCheckout(false);
       clear(); // Vaciar carrito después de compra exitosa
@@ -71,44 +64,100 @@ function Cart() {
     }
   };
 
+  // PANTALLA DE CONFIRMACIÓN
   if (orderSuccess) {
     return (
       <Container className="py-5">
-        <Card className="shadow text-center py-5">
-          <Card.Body>
+        <Card className="shadow">
+          <Card.Body className="text-center py-5">
             <div className="mb-4">
-              <i className="fas fa-check-circle text-success" style={{ fontSize: "5rem" }}></i>
+              <div 
+                style={{
+                  width: "100px",
+                  height: "100px",
+                  borderRadius: "50%",
+                  background: "#28a745",
+                  margin: "0 auto",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+              >
+                <i className="fas fa-check text-white" style={{ fontSize: "3rem" }}></i>
+              </div>
             </div>
+
             <h2 className="mb-3">¡Compra realizada con éxito!</h2>
-            <p className="lead mb-4">
-              Tu número de orden es: <strong>{orderId}</strong>
-            </p>
-            <Alert variant="info">
-              Recibirás un email de confirmación con los detalles de tu compra
-              en <strong>{buyer.email}</strong>
+            
+            <Card className="mx-auto mb-4" style={{ maxWidth: "500px" }}>
+              <Card.Body>
+                <Row className="text-start">
+                  <Col xs={5} className="text-muted">Número de orden:</Col>
+                  <Col xs={7}><strong>{orderId}</strong></Col>
+                  
+                  <Col xs={5} className="text-muted mt-2">Fecha:</Col>
+                  <Col xs={7} className="mt-2">{orderDate}</Col>
+                  
+                  <Col xs={5} className="text-muted mt-2">Email:</Col>
+                  <Col xs={7} className="mt-2">{buyer.email}</Col>
+                  
+                  <Col xs={5} className="text-muted mt-2">Total:</Col>
+                  <Col xs={7} className="mt-2">
+                    <strong className="text-success">
+                      ${getTotalPrice().toLocaleString()}
+                    </strong>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+
+            <Alert variant="info" className="mx-auto" style={{ maxWidth: "600px" }}>
+              <i className="fas fa-envelope me-2"></i>
+              Recibirás un email de confirmación con todos los detalles de tu compra
+              y las entradas en <strong>{buyer.email}</strong>
             </Alert>
-            <Link to="/">
-              <Button variant="primary" size="lg" className="mt-3">
-                Volver al Inicio
+
+            <div className="d-flex gap-3 justify-content-center mt-4">
+              <Link to="/">
+                <Button variant="primary" size="lg">
+                  <i className="fas fa-home me-2"></i>
+                  Volver al Inicio
+                </Button>
+              </Link>
+              <Button 
+                variant="outline-secondary" 
+                size="lg"
+                onClick={() => window.print()}
+              >
+                <i className="fas fa-print me-2"></i>
+                Imprimir Comprobante
               </Button>
-            </Link>
+            </div>
           </Card.Body>
         </Card>
       </Container>
     );
   }
 
+  // CARRITO VACÍO
   if (cart.length === 0) {
     return (
       <Container className="py-5">
         <Card className="shadow text-center py-5">
           <Card.Body>
+            <div className="mb-4">
+              <i 
+                className="fas fa-shopping-cart text-muted" 
+                style={{ fontSize: "5rem" }}
+              ></i>
+            </div>
             <h2 className="mb-4">Tu carrito está vacío</h2>
             <p className="text-muted mb-4">
               ¡Agrega algunos shows increíbles a tu carrito!
             </p>
             <Link to="/">
               <Button variant="primary" size="lg">
+                <i className="fas fa-ticket-alt me-2"></i>
                 Ver Shows Disponibles
               </Button>
             </Link>
@@ -118,14 +167,17 @@ function Cart() {
     );
   }
 
+  // CARRITO CON PRODUCTOS
   return (
     <>
       <Container className="py-5">
         <Row>
+          {/* COLUMNA IZQUIERDA - PRODUCTOS */}
           <Col lg={8}>
             <Card className="shadow mb-4">
               <Card.Header className="bg-primary text-white">
                 <h4 className="mb-0">
+                  <i className="fas fa-shopping-cart me-2"></i>
                   Carrito de Compras
                   <Badge bg="light" text="dark" className="ms-3">
                     {getTotalItems()} items
@@ -133,115 +185,105 @@ function Cart() {
                 </h4>
               </Card.Header>
               <Card.Body className="p-0">
-                <Table responsive hover className="mb-0">
-                  <thead className="bg-light">
-                    <tr>
-                      <th>Producto</th>
-                      <th>Tipo</th>
-                      <th>Precio Unit.</th>
-                      <th>Cantidad</th>
-                      <th>Subtotal</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cart.map((item) => (
-                      <tr key={`${item.id}-${item.spaceType}`}>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            <img
-                              src={item.image}
-                              alt={item.title}
-                              style={{
-                                width: "60px",
-                                height: "60px",
-                                objectFit: "cover",
-                                borderRadius: "8px",
-                              }}
-                              className="me-3"
-                            />
-                            <div>
-                              <strong>{item.title}</strong>
-                              <br />
-                              <small className="text-muted">
-                                {item.artist}
-                              </small>
-                              {item.date && (
-                                <>
-                                  <br />
-                                  <small className="text-muted">
+                <div className="table-responsive">
+                  <Table hover className="mb-0">
+                    <thead className="table-light">
+                      <tr>
+                        <th style={{ width: "45%" }}>Producto</th>
+                        <th style={{ width: "15%" }}>Tipo</th>
+                        <th style={{ width: "12%" }}>Precio</th>
+                        <th style={{ width: "15%" }}>Cantidad</th>
+                        <th style={{ width: "10%" }}>Subtotal</th>
+                        <th style={{ width: "3%" }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cart.map((item) => (
+                        <tr key={`${item.id}-${item.spaceType}`}>
+                          <td>
+                            <div className="d-flex align-items-center">
+                              <img
+                                src={item.image}
+                                alt={item.title}
+                                style={{
+                                  width: "60px",
+                                  height: "60px",
+                                  objectFit: "cover",
+                                  borderRadius: "8px",
+                                }}
+                                className="me-3"
+                              />
+                              <div>
+                                <strong className="d-block">{item.title}</strong>
+                                <small className="text-muted d-block">
+                                  {item.artist}
+                                </small>
+                                {item.date && (
+                                  <small className="text-muted d-block">
                                     📅 {new Date(item.date).toLocaleDateString("es-AR")}
                                   </small>
-                                </>
-                              )}
-                              {item.venue && (
-                                <>
-                                  <br />
-                                  <small className="text-muted">
-                                    📍 {item.venue}
-                                  </small>
-                                </>
-                              )}
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td>
-                          <Badge 
-                            bg={item.type === "ticket" ? "info" : "success"}
-                          >
-                            {item.spaceType}
-                          </Badge>
-                        </td>
-                        <td className="fw-bold text-success">
-                          ${item.price.toLocaleString()}
-                        </td>
-                        <td>
-                          <ButtonGroup size="sm">
-                            <Button
-                              variant="outline-secondary"
-                              onClick={() =>
-                                updateQuantity(
-                                  item.id,
-                                  item.spaceType,
-                                  item.quantity - 1
-                                )
-                              }
+                          </td>
+                          <td className="align-middle">
+                            <Badge 
+                              bg={item.type === "ticket" ? "info" : "success"}
                             >
-                              -
-                            </Button>
-                            <Button variant="outline-secondary" disabled>
-                              {item.quantity}
-                            </Button>
+                              {item.spaceType}
+                            </Badge>
+                          </td>
+                          <td className="align-middle fw-bold text-success">
+                            ${item.price.toLocaleString()}
+                          </td>
+                          <td className="align-middle">
+                            <ButtonGroup size="sm">
+                              <Button
+                                variant="outline-secondary"
+                                onClick={() =>
+                                  updateQuantity(
+                                    item.id,
+                                    item.spaceType,
+                                    item.quantity - 1
+                                  )
+                                }
+                              >
+                                <i className="fas fa-minus"></i>
+                              </Button>
+                              <Button variant="outline-secondary" disabled>
+                                {item.quantity}
+                              </Button>
+                              <Button
+                                variant="outline-secondary"
+                                onClick={() =>
+                                  updateQuantity(
+                                    item.id,
+                                    item.spaceType,
+                                    item.quantity + 1
+                                  )
+                                }
+                              >
+                                <i className="fas fa-plus"></i>
+                              </Button>
+                            </ButtonGroup>
+                          </td>
+                          <td className="align-middle fw-bold">
+                            ${(item.price * item.quantity).toLocaleString()}
+                          </td>
+                          <td className="align-middle">
                             <Button
-                              variant="outline-secondary"
-                              onClick={() =>
-                                updateQuantity(
-                                  item.id,
-                                  item.spaceType,
-                                  item.quantity + 1
-                                )
-                              }
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => removeItem(item.id, item.spaceType)}
                             >
-                              +
+                              <i className="fas fa-trash"></i>
                             </Button>
-                          </ButtonGroup>
-                        </td>
-                        <td className="fw-bold">
-                          ${(item.price * item.quantity).toLocaleString()}
-                        </td>
-                        <td>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => removeItem(item.id, item.spaceType)}
-                          >
-                            <i className="fas fa-trash"></i>
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
               </Card.Body>
               <Card.Footer className="bg-light">
                 <Button
@@ -256,23 +298,31 @@ function Cart() {
             </Card>
           </Col>
 
+          {/* COLUMNA DERECHA - RESUMEN */}
           <Col lg={4}>
-            <Card className="shadow mb-4">
+            <Card className="shadow mb-4 sticky-top" style={{ top: "100px" }}>
               <Card.Header className="bg-success text-white">
-                <h5 className="mb-0">Resumen de Compra</h5>
+                <h5 className="mb-0">
+                  <i className="fas fa-receipt me-2"></i>
+                  Resumen de Compra
+                </h5>
               </Card.Header>
               <Card.Body>
                 <div className="d-flex justify-content-between mb-2">
-                  <span>Subtotal:</span>
+                  <span>Subtotal ({getTotalItems()} items):</span>
                   <strong>${getTotalPrice().toLocaleString()}</strong>
                 </div>
                 <div className="d-flex justify-content-between mb-2">
                   <span>Service Charge:</span>
                   <span className="text-muted">Incluido</span>
                 </div>
+                <div className="d-flex justify-content-between mb-2">
+                  <span>Envío de entradas:</span>
+                  <span className="text-success">GRATIS</span>
+                </div>
                 <hr />
-                <div className="d-flex justify-content-between mb-3">
-                  <strong>Total:</strong>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <strong style={{ fontSize: "1.1rem" }}>Total:</strong>
                   <h4 className="text-success mb-0">
                     ${getTotalPrice().toLocaleString()}
                   </h4>
@@ -284,123 +334,75 @@ function Cart() {
                   size="lg"
                   onClick={() => setShowCheckout(true)}
                 >
-                  Finalizar Compra
+                  <i className="fas fa-lock me-2"></i>
+                  Proceder al Pago
                 </Button>
 
                 <Link to="/">
                   <Button variant="outline-primary" className="w-100">
+                    <i className="fas fa-arrow-left me-2"></i>
                     Seguir Comprando
                   </Button>
                 </Link>
               </Card.Body>
             </Card>
 
-            <Alert variant="info">
+            <Alert variant="info" className="shadow-sm">
               <Alert.Heading className="h6">
-                <i className="fas fa-info-circle me-2"></i>
-                Información
+                <i className="fas fa-shield-alt me-2"></i>
+                Compra Segura
               </Alert.Heading>
               <small>
-                • Los precios incluyen service charge
-                <br />
-                • Las entradas se enviarán por email
-                <br />• Compra segura y protegida
+                • Pagos protegidos con SSL<br />
+                • Entradas enviadas por email<br />
+                • Garantía de devolución<br />
+                • Soporte 24/7
               </small>
             </Alert>
+
+            <Card className="shadow-sm">
+              <Card.Body className="text-center">
+                <p className="mb-2 small text-muted">Aceptamos</p>
+                <div className="d-flex justify-content-center gap-2">
+                  <Badge bg="light" text="dark">💳 Visa</Badge>
+                  <Badge bg="light" text="dark">💳 Mastercard</Badge>
+                  <Badge bg="light" text="dark">💳 Amex</Badge>
+                </div>
+              </Card.Body>
+            </Card>
           </Col>
         </Row>
       </Container>
 
-      {/* MODAL DE CHECKOUT */}
-      <Modal show={showCheckout} onHide={() => setShowCheckout(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Completar Compra</Modal.Title>
+      {/* MODAL DE CHECKOUT CON FORMULARIO DE PAGO */}
+      <Modal 
+        show={showCheckout} 
+        onHide={() => !loading && setShowCheckout(false)} 
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton={!loading}>
+          <Modal.Title>
+            <i className="fas fa-credit-card me-2"></i>
+            Completar Pago
+          </Modal.Title>
         </Modal.Header>
-        <Form onSubmit={handleCheckout}>
-          <Modal.Body>
-            <h5 className="mb-3">Datos del Comprador</h5>
-            
-            <Form.Group className="mb-3">
-              <Form.Label>Nombre Completo</Form.Label>
-              <Form.Control
-                type="text"
-                name="name"
-                value={buyer.name}
-                onChange={handleInputChange}
-                placeholder="Juan Pérez"
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Teléfono</Form.Label>
-              <Form.Control
-                type="tel"
-                name="phone"
-                value={buyer.phone}
-                onChange={handleInputChange}
-                placeholder="+54 11 1234-5678"
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                name="email"
-                value={buyer.email}
-                onChange={handleInputChange}
-                placeholder="tu@email.com"
-                required
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Confirmar Email</Form.Label>
-              <Form.Control
-                type="email"
-                name="emailConfirm"
-                value={buyer.emailConfirm}
-                onChange={handleInputChange}
-                placeholder="tu@email.com"
-                required
-              />
-            </Form.Group>
-
-            <hr />
-
-            <h5 className="mb-3">Resumen de la Orden</h5>
-            <p><strong>Total de items:</strong> {getTotalItems()}</p>
-            <p><strong>Total a pagar:</strong> ${getTotalPrice().toLocaleString()}</p>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowCheckout(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              variant="success" 
-              type="submit" 
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Spinner
-                    as="span"
-                    animation="border"
-                    size="sm"
-                    role="status"
-                    aria-hidden="true"
-                    className="me-2"
-                  />
-                  Procesando...
-                </>
-              ) : (
-                "Confirmar Compra"
-              )}
-            </Button>
-          </Modal.Footer>
-        </Form>
+        <Modal.Body>
+          {loading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="primary" />
+              <p className="mt-3">Procesando tu pago...</p>
+              <p className="text-muted">Por favor espera</p>
+            </div>
+          ) : (
+            <PaymentForm
+              totalAmount={getTotalPrice()}
+              onSubmit={handleCheckout}
+              buyer={buyer}
+              setBuyer={setBuyer}
+            />
+          )}
+        </Modal.Body>
       </Modal>
     </>
   );
