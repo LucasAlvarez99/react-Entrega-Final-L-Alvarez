@@ -8,7 +8,9 @@ import Button from "react-bootstrap/Button";
 import Card from "react-bootstrap/Card";
 import Alert from "react-bootstrap/Alert";
 import Table from "react-bootstrap/Table";
+import Spinner from "react-bootstrap/Spinner";
 import { addProduct } from "../services/productsService";
+import { uploadImages } from "../services/storageService";
 import { seedProducts } from "../scripts/seedProducts";
 
 function AdminPage() {
@@ -41,6 +43,8 @@ function AdminPage() {
   const [submitted, setSubmitted] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
   const [loadingSeed, setLoadingSeed] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -60,18 +64,20 @@ function AdminPage() {
   };
 
   const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
+    const files = e.target.files;
+    
     if (files.length > 3) {
       alert("Solo puedes subir máximo 3 imágenes");
+      e.target.value = "";
       return;
     }
 
-    const imageUrls = files.map((file) => URL.createObjectURL(file));
-    setPreviewImages(imageUrls);
-    setShowForm({
-      ...showForm,
-      images: imageUrls,
-    });
+    // Guardar archivos para subir después
+    setSelectedFiles(files);
+
+    // Crear previews
+    const previews = Array.from(files).map((file) => URL.createObjectURL(file));
+    setPreviewImages(previews);
   };
 
   const handleAddMerchandise = () => {
@@ -105,9 +111,22 @@ function AdminPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!selectedFiles || selectedFiles.length === 0) {
+      alert("Por favor selecciona al menos una imagen");
+      return;
+    }
+
     try {
+      setUploadingImages(true);
+
+      // Subir imágenes a Firebase Storage
+      console.log("Subiendo imágenes a Firebase Storage...");
+      const imageUrls = await uploadImages(selectedFiles);
+      
+      // Crear objeto del show con las URLs de las imágenes
       const newShow = {
         ...showForm,
+        images: imageUrls, // URLs reales de Firebase Storage
         spaces: showForm.spaces.map((space) => ({
           ...space,
           price: Number(space.price),
@@ -115,9 +134,13 @@ function AdminPage() {
         })),
       };
 
+      setUploadingImages(false);
+
+      // Guardar producto en Firestore
+      console.log("Guardando show en Firestore...");
       const savedProduct = await addProduct(newShow);
       
-      console.log("Show creado exitosamente:", savedProduct);
+      console.log("✅ Show creado exitosamente:", savedProduct);
       
       setSubmitted(true);
       
@@ -127,7 +150,8 @@ function AdminPage() {
       
     } catch (error) {
       console.error("Error al crear show:", error);
-      alert("Error al crear el show. Por favor intenta de nuevo.");
+      alert("Error al crear el show. Verifica tu conexión y las reglas de Firebase Storage.");
+      setUploadingImages(false);
     }
   };
 
@@ -170,6 +194,13 @@ function AdminPage() {
         <Alert variant="success" className="mb-4">
           <Alert.Heading>¡Show creado exitosamente!</Alert.Heading>
           <p>El show ha sido agregado al catálogo. Redirigiendo al inicio...</p>
+        </Alert>
+      )}
+
+      {uploadingImages && (
+        <Alert variant="info" className="mb-4">
+          <Spinner animation="border" size="sm" className="me-2" />
+          Subiendo imágenes a Firebase Storage...
         </Alert>
       )}
 
@@ -271,7 +302,7 @@ function AdminPage() {
                 required
               />
               <Form.Text className="text-muted">
-                Las imágenes se mostrarán en un carrusel
+                Las imágenes se subirán a Firebase Storage y se mostrarán en un carrusel
               </Form.Text>
             </Form.Group>
 
@@ -283,6 +314,7 @@ function AdminPage() {
                       src={img}
                       alt={`Preview ${index + 1}`}
                       className="img-fluid rounded"
+                      style={{ height: "150px", objectFit: "cover" }}
                     />
                   </Col>
                 ))}
@@ -442,9 +474,24 @@ function AdminPage() {
             type="submit" 
             size="lg" 
             className="px-5"
-            disabled={submitted}
+            disabled={submitted || uploadingImages}
           >
-            {submitted ? "Creando..." : "Crear Show"}
+            {uploadingImages ? (
+              <>
+                <Spinner
+                  as="span"
+                  animation="border"
+                  size="sm"
+                  role="status"
+                  className="me-2"
+                />
+                Subiendo imágenes...
+              </>
+            ) : submitted ? (
+              "Creando..."
+            ) : (
+              "Crear Show"
+            )}
           </Button>
         </div>
       </Form>

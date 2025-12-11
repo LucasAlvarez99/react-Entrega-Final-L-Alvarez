@@ -1,21 +1,29 @@
-
+// src/services/firebase.js
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
+// Configuración desde variables de entorno
 const firebaseConfig = {
-  apiKey: "AIzaSyDRhdcYX0pIe6oWRy-Foq8oUKK3SMd4cbA",
-  authDomain: "las-puertas-del-olimpo.firebaseapp.com",
-  projectId: "las-puertas-del-olimpo",
-  storageBucket: "las-puertas-del-olimpo.firebasestorage.app",
-  messagingSenderId: "882751834274",
-  appId: "1:882751834274:web:2f360edd68928dd471effb"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+// Verificar que las variables estén configuradas
+if (!firebaseConfig.apiKey) {
+  console.error("❌ Error: Variables de entorno de Firebase no configuradas.");
+  console.log("📝 Crea un archivo .env en la raíz del proyecto con tus credenciales.");
+}
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 
-// Inicializar Firestore
+// Inicializar Firestore y Storage
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 export default app;
