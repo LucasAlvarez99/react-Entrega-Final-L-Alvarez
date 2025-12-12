@@ -1,7 +1,6 @@
 // src/services/firebase.js
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
 
 // Configuración desde variables de entorno
 const firebaseConfig = {
@@ -24,6 +23,5 @@ const app = initializeApp(firebaseConfig);
 
 // Inicializar Firestore y Storage
 export const db = getFirestore(app);
-export const storage = getStorage(app);
 
 export default app;

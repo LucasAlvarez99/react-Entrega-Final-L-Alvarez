@@ -1,7 +1,4 @@
 // src/scripts/seedProducts.js
-// Script OPCIONAL para cargar productos de ejemplo en Firestore
-// Solo ejecutar UNA VEZ si quieres datos de prueba iniciales
-
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
 
@@ -13,9 +10,9 @@ const initialProducts = [
     date: "2025-03-15",
     venue: "Estadio Monumental",
     images: [
-      "/images/metalica-entrada.png",
-      "/images/metalica-remera.png",
-      "/images/metalica-disco.png"
+      "/images/shows/metallica-1.jpg",
+      "/images/shows/metallica-2.jpg",
+      "/images/shows/metallica-3.jpg"
     ],
     spaces: [
       { name: "Campo Delantero", price: 15000, stock: 100 },
@@ -27,8 +24,7 @@ const initialProducts = [
     ],
     merchandise: [
       { id: "m1", name: "Remera Metallica", price: 8000, stock: 50 },
-      { id: "m2", name: "Gorra Metallica", price: 5000, stock: 30 },
-      { id: "m3", name: "Disco Master of Puppets", price: 4000, stock: 40 }
+      { id: "m2", name: "Gorra Metallica", price: 5000, stock: 30 }
     ],
     category: "metallica",
     createdAt: new Date().toISOString()
@@ -40,9 +36,8 @@ const initialProducts = [
     date: "2025-04-20",
     venue: "Estadio River Plate",
     images: [
-      "/images/acdc-entrada.png",
-      "/images/acdc-remera.png",
-      "/images/acdc-disco.png"
+      "/images/shows/acdc-1.jpg",
+      "/images/shows/acdc-2.jpg"
     ],
     spaces: [
       { name: "Campo Delantero", price: 14000, stock: 100 },
@@ -53,8 +48,7 @@ const initialProducts = [
       { name: "Platea Alta", price: 5500, stock: 120 }
     ],
     merchandise: [
-      { id: "m4", name: "Remera AC/DC", price: 7500, stock: 50 },
-      { id: "m5", name: "Gorra AC/DC", price: 4500, stock: 30 }
+      { id: "m4", name: "Remera AC/DC", price: 7500, stock: 50 }
     ],
     category: "acdc",
     createdAt: new Date().toISOString()
@@ -66,8 +60,7 @@ const initialProducts = [
     date: "2025-05-10",
     venue: "Teatro Colón",
     images: [
-      "/images/sylvania-entrada.png",
-      "/images/sylvania-disco.png"
+      "/images/shows/sylvania-1.jpg"
     ],
     spaces: [
       { name: "Campo Delantero", price: 10000, stock: 80 },
@@ -82,28 +75,89 @@ const initialProducts = [
     ],
     category: "sylvania",
     createdAt: new Date().toISOString()
+  },
+  {
+    title: "Linkin Park - Hybrid Theory Anniversary",
+    type: "show",
+    artist: "Linkin Park",
+    date: "2025-06-15",
+    venue: "Movistar Arena",
+    images: [
+      "/images/shows/linkin-park-1.jpg"
+    ],
+    spaces: [
+      { name: "Campo Delantero", price: 16000, stock: 90 },
+      { name: "Campo Trasero", price: 13000, stock: 140 },
+      { name: "Campo VIP", price: 26000, stock: 40 },
+      { name: "Platea Baja", price: 11000, stock: 70 },
+      { name: "Platea Media", price: 9000, stock: 90 },
+      { name: "Platea Alta", price: 7000, stock: 110 }
+    ],
+    merchandise: [],
+    category: "linkin-park",
+    createdAt: new Date().toISOString()
+  },
+  {
+    title: "Mago de Oz - Gaia III Tour",
+    type: "show",
+    artist: "Mago de Oz",
+    date: "2025-07-20",
+    venue: "Luna Park",
+    images: [
+      "/images/shows/mago-de-oz-1.jpg"
+    ],
+    spaces: [
+      { name: "Campo Delantero", price: 12000, stock: 85 },
+      { name: "Campo Trasero", price: 9500, stock: 130 },
+      { name: "Campo VIP", price: 20000, stock: 35 },
+      { name: "Platea Baja", price: 8500, stock: 75 },
+      { name: "Platea Media", price: 6500, stock: 95 },
+      { name: "Platea Alta", price: 5000, stock: 115 }
+    ],
+    merchandise: [
+      { id: "m7", name: "Bandera Mago de Oz", price: 4500, stock: 25 }
+    ],
+    category: "mago-de-oz",
+    createdAt: new Date().toISOString()
+  },
+  {
+    title: "Feuerschwanz - Medieval Rock Fest",
+    type: "show",
+    artist: "Feuerschwanz",
+    date: "2025-08-10",
+    venue: "C Complejo Art Media",
+    images: [
+      "/images/shows/feuerschwanz-1.jpg"
+    ],
+    spaces: [
+      { name: "Campo Delantero", price: 11000, stock: 70 },
+      { name: "Campo Trasero", price: 8500, stock: 110 },
+      { name: "Campo VIP", price: 19000, stock: 30 },
+      { name: "Platea Baja", price: 7500, stock: 65 },
+      { name: "Platea Media", price: 6000, stock: 85 },
+      { name: "Platea Alta", price: 4500, stock: 105 }
+    ],
+    merchandise: [],
+    category: "feuerschwanz",
+    createdAt: new Date().toISOString()
   }
 ];
 
 export const seedProducts = async () => {
   try {
-    console.log("🌱 Iniciando seed de productos...");
+    console.log("🌱 Iniciando seed con imágenes locales...");
     
     const productsRef = collection(db, "products");
     
     for (const product of initialProducts) {
       await addDoc(productsRef, product);
-      console.log(`✅ Producto agregado: ${product.title}`);
+      console.log(`✅ ${product.title}`);
     }
     
-    console.log("🎉 Seed completado exitosamente!");
+    console.log("🎉 6 productos cargados exitosamente!");
     return true;
   } catch (error) {
-    console.error("❌ Error al hacer seed:", error);
+    console.error("❌ Error:", error);
     return false;
   }
 };
-
-// Ejecutar manualmente desde la consola del navegador:
-// import { seedProducts } from './scripts/seedProducts'
-// seedProducts()
