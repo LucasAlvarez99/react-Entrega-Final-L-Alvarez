@@ -166,7 +166,7 @@ function AdminPage() {
       </div>
       
       <p className="text-center text-muted mb-5">
-        Crea shows con imágenes locales (sin Firebase Storage)
+        Crea shows con imágenes locales 
       </p>
 
       {submitted && (
