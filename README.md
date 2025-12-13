@@ -1,205 +1,266 @@
 # Las Puertas del Olimpo 🎸
 
-E-commerce de entradas y merchandise para shows de rock y metal.
+**E-commerce de entradas y merchandise para shows de rock y metal**
 
-## 🚀 Descripción
+---
 
-Aplicación web desarrollada con React para la venta de entradas de shows musicales y merchandise. Los usuarios pueden navegar por diferentes shows, seleccionar ubicaciones, agregar productos al carrito y finalizar la compra.
+## 📋 Descripción del Proyecto
 
-## 📋 Características
+**Las Puertas del Olimpo** es una Single Page Application (SPA) de e-commerce desarrollada con React, diseñada para la venta de entradas de shows musicales y merchandise de bandas de rock y metal. El proyecto implementa patrones y conceptos específicos de React, gestión de estado global con Context API, y Firebase/Firestore como base de datos en la nube.
 
-- ✅ Catálogo de shows con múltiples espacios/ubicaciones
-- ✅ Sistema de carrito de compras persistente
-- ✅ Filtrado por categorías (artistas/bandas)
-- ✅ Vista detallada de cada show
-- ✅ Gestión de stock en tiempo real
-- ✅ Sistema de checkout con formulario de comprador
-- ✅ Generación de órdenes de compra en Firebase
-- ✅ Panel de administración para crear shows
-- ✅ Responsive design (mobile-first)
+---
+
+## ✨ Características Principales
+
+### 🎯 Requisitos Obligatorios Cumplidos
+
+#### ✅ **Listado y Detalle de Productos**
+- ✅ Generación dinámica del listado de productos mediante `ItemListContainer`
+- ✅ Vista detallada de cada producto con `ItemDetailContainer`
+- ✅ Separación de componentes contenedores y de presentación (`ItemListContainer` → `ItemList` → `Item`)
+- ✅ Componente `ItemCount` con validaciones (mínimo, stock disponible)
+- ✅ ItemCount se oculta después de agregar al carrito
+
+#### ✅ **Navegación**
+- ✅ Navegación con React Router DOM entre todas las secciones
+- ✅ Modelo Single Page App (sin recargas del navegador)
+- ✅ Rutas implementadas:
+  - `/` - Inicio (catálogo completo)
+  - `/category/:categoryId` - Filtrado por categoría/banda
+  - `/item/:itemId` - Detalle del producto
+  - `/cart` - Carrito de compras
+  - `/contacto` - Página de contacto
+  - `/admin` - Panel de administración
+  - `/admin/manage` - Gestión de productos
+
+#### ✅ **Carrito de Compras**
+- ✅ Context API para gestión global del estado del carrito
+- ✅ Componente `Cart` con productos, cantidades, subtotales y totales
+- ✅ `CartWidget` en NavBar mostrando total de unidades
+- ✅ Persistencia del carrito en localStorage
+- ✅ Funciones de agregar, eliminar y actualizar cantidades
+- ✅ Cálculo automático de totales con service charge (10%)
+
+#### ✅ **Firebase & Firestore**
+- ✅ Base de datos Firestore implementada
+- ✅ Colección `products` con todos los shows
+- ✅ Colección `orders` para registrar compras
+- ✅ Consultas en tiempo real desde React
+- ✅ Generación de documento en Firestore al confirmar compra
+- ✅ Variables de entorno para credenciales (.env)
+
+#### ✅ **Experiencia de Usuario**
+- ✅ Renderizado condicional con loaders y spinners
+- ✅ Mensajes condicionales ("carrito vacío", "sin stock", "producto no encontrado")
+- ✅ Confirmación de orden con ID único generado
+- ✅ Pantalla de éxito después de la compra
+- ✅ Email de confirmación al usuario
+
+### 🚀 **Funcionalidades Adicionales**
+
+#### 💎 **Panel de Administración Completo**
+- ✅ Crear nuevos shows desde interfaz web
+- ✅ Gestionar shows existentes (ver/eliminar)
+- ✅ **Carga de imágenes desde dispositivo** (Base64)
+- ✅ Sistema de seed para cargar datos de ejemplo
+- ✅ Validaciones de formulario
+- ✅ Vista previa de imágenes antes de guardar
+- ✅ Soporte para hasta 3 imágenes por show
+
+#### 💳 **Sistema de Pago Completo**
+- ✅ Formulario de pago con múltiples métodos:
+  - Tarjeta de crédito/débito
+  - Transferencia bancaria
+  - Efectivo
+- ✅ Validación de tarjetas (Algoritmo de Luhn)
+- ✅ Detección automática de tipo de tarjeta (Visa, Mastercard, Amex)
+- ✅ Formateo automático de campos
+- ✅ Validación de fecha de expiración
+- ✅ CVV con validación
+
+#### 🎨 **Diseño y Estilos**
+- ✅ Bootstrap 5.3 + React Bootstrap
+- ✅ Font Awesome para iconos
+- ✅ Diseño responsive (mobile-first)
+- ✅ Tema dark personalizado para navbar
+- ✅ Animaciones y transiciones CSS
+- ✅ Cards con hover effects
+- ✅ Carrusel de imágenes en detalle de productos
+
+#### ⚡ **Optimizaciones**
+- ✅ Sistema de caché en memoria + localStorage
+- ✅ Caché con duración de 1 hora
+- ✅ Lazy loading de imágenes
+- ✅ Fallback para imágenes rotas
+- ✅ Code splitting optimizado
+- ✅ Reducción de llamadas a Firestore
+
+---
 
 ## 🛠️ Tecnologías Utilizadas
 
-- **React 19** - Framework principal
-- **React Router DOM** - Navegación entre páginas
-- **React Bootstrap** - Componentes UI
-- **Firebase Firestore** - Base de datos NoSQL
-- **Vite** - Build tool y dev server
-- **Context API** - Manejo de estado global del carrito
+### **Core**
+- ⚛️ **React 19.1.1**
+- 🔥 **Firebase 12.6.0** (Firestore)
+- 🧭 **React Router DOM 7.9.6**
+- 🎨 **Bootstrap 5.3.8**
+- 🎨 **React Bootstrap 2.10.10**
 
-## 📦 Instalación
+### **Herramientas de Desarrollo**
+- ⚡ **Vite 7.1.7** (Build tool)
+- 📦 **ESLint** (Linting)
+- 🎯 **Font Awesome 7.1.0** (Iconos)
+- 📊 **Vercel Speed Insights**
 
-1. **Clonar el repositorio**
+---
+
+## 🚀 Instalación y Uso
+
+### **1. Clonar el repositorio**
 ```bash
-git https://github.com/LucasAlvarez99/react-Entrega-Final-L-Alvarez.git
+git clone https://github.com/LucasAlvarez99/react-Entrega-Final-L-Alvarez.git
 cd react-Entrega-Final-L-Alvarez
 ```
 
-2. **Instalar dependencias**
+### **2. Instalar dependencias**
 ```bash
 npm install
 ```
-
-3. **Configurar Firebase**
-   
-   a. Crea un proyecto en [Firebase Console](https://console.firebase.google.com/)
-   
-   b. Habilita Firestore Database
-   
-   c. Copia tus credenciales de Firebase
-   
-   d. Edita `src/services/firebase.js` y reemplaza las credenciales:
-   
-   ```javascript
-   const firebaseConfig = {
-     apiKey: "TU_API_KEY",
-     authDomain: "TU_PROJECT_ID.firebaseapp.com",
-     projectId: "TU_PROJECT_ID",
-     storageBucket: "TU_PROJECT_ID.appspot.com",
-     messagingSenderId: "TU_MESSAGING_SENDER_ID",
-     appId: "TU_APP_ID"
-   };
-   ```
-
-4. **Iniciar el servidor de desarrollo**
+### **3. Iniciar servidor de desarrollo**
 ```bash
 npm run dev
 ```
 
-## 🔥 Configuración de Firebase
+La aplicación estará disponible en `http://localhost:3000`
 
-### Reglas de Firestore (para desarrollo)
+### **4. Cargar datos de ejemplo (Opcional)**
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /products/{document} {
-      allow read: if true;
-      allow write: if true;
-    }
-    match /orders/{document} {
-      allow read: if true;
-      allow write: if true;
-    }
-  }
-}
-```
+En el panel de administración (`/admin`), haz clic en **"Cargar Datos de Ejemplo"** para poblar la base de datos con 6 shows de ejemplo.
 
-**⚠️ IMPORTANTE:** Para producción, debes implementar reglas de seguridad apropiadas.
+---
 
+## 🎯 Funcionalidades por Sección
 
-## 🎯 Funcionalidades Principales
+### **🏠 Inicio**
+- Listado completo de shows disponibles (Extrañamente tarda en cargar las imagenes)
+- Cards con imagen, título, fecha, lugar y precio desde
+- Botón "Ver Detalles" para acceder al show completo
+- Lazy loading de imágenes con spinners
 
-### 1. Navegación
-- Página principal con listado de shows
-- Filtrado por categorías (bandas)
-- Vista detallada de cada show
+### **🎸 Categorías**
+- Filtrado por banda/artista en el navbar
+- URLs amigables (`/category/metallica`)
+- Mismo diseño que el inicio pero filtrado
 
-### 2. Carrito de Compras
-- Agregar/quitar productos
-- Modificar cantidades
-- Persistencia en Context API
-- Cálculo automático de totales
+### **📝 Detalle de Producto**
+- Carrusel de hasta 3 imágenes
+- Información completa del show (artista, fecha, lugar)
+- Selector de ubicación (Campo, Platea VIP, etc.)
+- Componente ItemCount para seleccionar cantidad
+- Agregado de merchandise adicional
+- Botón "Agregar al Carrito" con validación de stock
 
-### 3. Checkout
-- Formulario de datos del comprador
-- Validación de email
-- Creación de orden en Firestore
-- Generación de ID único de compra
+### **🛒 Carrito**
+- Lista de productos agregados con imagen
+- Cantidades editables (+/-)
+- Subtotales y total calculado automáticamente
+- Service charge incluido (10%)
+- Botón "Vaciar Carrito"
+- Botón "Proceder al Pago"
+- Indicadores de "Carrito Vacío"
 
-### 4. Panel de Administración
+### **💳 Checkout**
+- Formulario del comprador (nombre, teléfono, email)
+- Selección de método de pago
+- Formulario de tarjeta con validaciones
+- Confirmación con ID de orden único
+- Pantalla de éxito con detalles de la compra
+
+### **⚙️ Panel Admin**
 - Crear nuevos shows
-- Definir múltiples espacios con precios
+- Cargar hasta 3 imágenes desde dispositivo
+- Definir espacios con precios y stock
 - Agregar merchandise
-- Cargar hasta 3 imágenes por show
+- Botón "Cargar Datos de Ejemplo"
 
-## 🎨 Diseño
+### **📊 Gestión de Shows**
+- Tabla con todos los shows
+- Vista previa de imágenes
+- Botón "Ver" (redirige al detalle)
+- Botón "Eliminar" con confirmación
+- Estadísticas (total shows, categorías)
 
-El proyecto utiliza:
-- **Bootstrap 5.3** para componentes UI
-- **React Bootstrap** para integración con React
-- **Font Awesome** para iconos
-- Paleta de colores personalizada (azul/verde/gris)
-
-## 📱 Responsive Design
-
-La aplicación es totalmente responsive y se adapta a:
-- 📱 Móviles (< 768px)
-- 📱 Tablets (768px - 992px)
-- 💻 Desktop (> 992px)
-
-## 🔐 Variables de Entorno (Opcional)
-
-Para mayor seguridad, puedes usar variables de entorno:
-
-1. Crea un archivo `.env` en la raíz:
-```env
-VITE_FIREBASE_API_KEY=tu_api_key
-VITE_FIREBASE_AUTH_DOMAIN=tu_auth_domain
-VITE_FIREBASE_PROJECT_ID=tu_project_id
-VITE_FIREBASE_STORAGE_BUCKET=tu_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=tu_sender_id
-VITE_FIREBASE_APP_ID=tu_app_id
-```
-
-2. Actualiza `firebase.js`:
-```javascript
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  // ... resto de configuración
-};
-```
-
-## 🚀 Deploy
-
-### Opción 1: Vercel
-```bash
-npm run build
-# Sube la carpeta /dist a Vercel
-```
-
-### Opción 2: Netlify
-```bash
-npm run build
-# Conecta tu repo con Netlify
-```
-
-### Opción 3: Firebase Hosting
-```bash
-npm install -g firebase-tools
-firebase login
-firebase init hosting
-npm run build
-firebase deploy
-```
+---
 
 ## 📝 Scripts Disponibles
 
 ```bash
-npm run dev      # Inicia servidor de desarrollo
-npm run build    # Genera build de producción
+npm run dev      # Servidor de desarrollo (puerto 3000)
+npm run build    # Build de producción
 npm run preview  # Preview del build
-npm run lint     # Ejecuta ESLint
+npm run lint     # Ejecutar ESLint
 ```
-
-## 👨‍💻 Autor
-
-**[Tu Nombre]**
-- GitHub: [@LucasAlvarez99](https://github.com/LucasAlvarez99)
-- Email: lucas.alvarez.bernardez.99@gmail.com
-
-## 📄 Licencia
-
-Este proyecto fue desarrollado como parte del curso de React JS en CoderHouse.
-
-## 🙏 Agradecimientos
-
-- CoderHouse por el curso de React JS
-- Firebase por la plataforma
-- Bootstrap por los componentes UI
 
 ---
 
-⭐ Si te gustó el proyecto, ¡dale una estrella en GitHub!
+## 🤝 Convenciones y Buenas Prácticas
+
+### ✅ Convenciones Cumplidas
+- ✅ Nombres de componentes en PascalCase
+- ✅ Nombres de funciones en camelCase
+- ✅ Arquitectura de carpetas organizada
+- ✅ Separación de componentes contenedores/presentacionales
+- ✅ Context API para estado global
+- ✅ Services para lógica de negocio
+- ✅ Manejo de errores con try-catch
+- ✅ Loading states y renderizado condicional
+- ✅ PropTypes implícitos con TypeScript comments
+
+---
+
+## 🐛 Troubleshooting
+
+### **Los shows no aparecen:**
+```javascript
+// En la consola del navegador:
+localStorage.clear();
+location.reload();
+
+---
+
+## 👨‍💻 Autor
+
+**Lucas Alvarez Bernardez**
+
+- 📧 Email: lucas.alvarez.bernardez.99@gmail.com
+- 💼 LinkedIn: [lucas-alvarez-bernardez](https://www.linkedin.com/in/lucas-alvarez-bernardez/)
+- 🐙 GitHub: [@LucasAlvarez99](https://github.com/LucasAlvarez99)
+- 📸 Instagram: [@el_mago_lucas](https://www.instagram.com/el_mago_lucas/)
+
+---
+
+## 📄 Licencia
+
+Este proyecto fue desarrollado como **Proyecto Final** del curso de **React JS** en **CoderHouse** (Comisión 81725).
+
+---
+
+## 🙏 Agradecimientos
+
+- **CoderHouse** por el curso de React JS
+- **Firebase** por la plataforma en la nube
+- **Bootstrap** por los componentes UI
+- **Vercel** por el hosting gratuito
+- **Font Awesome** por los iconos
+
+---
+
+## 📌 Notas Finales
+
+### **Estado del Proyecto: ✅ COMPLETO**
+
+Todos los requisitos obligatorios del proyecto final han sido implementados y probados. Funcionalidades adicionales como el panel de administración completo, sistema de pago, y carga de imágenes desde dispositivo fueron agregadas para enriquecer la experiencia del usuario.
+
+---
+
+⭐ **Si te gustó el proyecto, ¡dale una estrella en GitHub! (pa ayudarme a conseguir trabajo)** ⭐
