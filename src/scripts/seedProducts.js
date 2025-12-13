@@ -37,7 +37,8 @@ const initialProducts = [
     venue: "Estadio River Plate",
     images: [
       "/images/shows/acdc-1.jpg",
-      "/images/shows/acdc-2.jpg"
+      "/images/shows/acdc-2.jpg",
+      "/images/shows/acdc-3.jpg"
     ],
     spaces: [
       { name: "Campo Delantero", price: 14000, stock: 100 },
@@ -60,7 +61,8 @@ const initialProducts = [
     date: "2025-05-10",
     venue: "Teatro Colón",
     images: [
-      "/images/shows/sylvania-1.jpg"
+      "/images/shows/sylvania-1.jpg",
+      "/images/shows/sylvania-2.jpg"
     ],
     spaces: [
       { name: "Campo Delantero", price: 10000, stock: 80 },
@@ -83,7 +85,9 @@ const initialProducts = [
     date: "2025-06-15",
     venue: "Movistar Arena",
     images: [
-      "/images/shows/linkin-park-1.jpg"
+      "/images/shows/linkin-1.jpg",
+      "/images/shows/linkin-2.jpg",
+      "/images/shows/linkin-3.jpg"
     ],
     spaces: [
       { name: "Campo Delantero", price: 16000, stock: 90 },
@@ -104,7 +108,9 @@ const initialProducts = [
     date: "2025-07-20",
     venue: "Luna Park",
     images: [
-      "/images/shows/mago-de-oz-1.jpg"
+      "/images/shows/mago-1.jpg",
+      "/images/shows/mago-2.jpg",
+      "/images/shows/mago-3.jpg"
     ],
     spaces: [
       { name: "Campo Delantero", price: 12000, stock: 85 },
@@ -127,7 +133,9 @@ const initialProducts = [
     date: "2025-08-10",
     venue: "C Complejo Art Media",
     images: [
-      "/images/shows/feuerschwanz-1.jpg"
+      "/images/shows/feuerschwanz-1.jpg",
+      "/images/shows/feuerschwanz-2.jpg",
+      "/images/shows/feuerschwanz-3.jpg"
     ],
     spaces: [
       { name: "Campo Delantero", price: 11000, stock: 70 },
