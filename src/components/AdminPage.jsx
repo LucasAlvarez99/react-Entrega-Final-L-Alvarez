@@ -29,8 +29,11 @@ function AdminPage() {
       { name: "Platea Alta", price: "", stock: "" },
     ],
     merchandise: [],
-    imageUrls: "", // URLs separadas por comas
+    images: [] // Ahora guardamos Base64
   });
+
+  const [imageFiles, setImageFiles] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
 
   const [merchandiseItem, setMerchandiseItem] = useState({
     name: "",
@@ -55,6 +58,59 @@ function AdminPage() {
     setShowForm({
       ...showForm,
       spaces: updatedSpaces,
+    });
+  };
+
+  // MANEJO DE IMÁGENES
+  const handleImageChange = async (e) => {
+    const files = Array.from(e.target.files);
+    
+    if (files.length > 3) {
+      alert("Máximo 3 imágenes");
+      return;
+    }
+
+    // Convertir a Base64
+    const base64Promises = files.map(file => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    });
+
+    try {
+      const base64Images = await Promise.all(base64Promises);
+      
+      setImageFiles(files);
+      setImagePreviews(base64Images);
+      setShowForm({
+        ...showForm,
+        images: base64Images
+      });
+      
+      console.log("✅ Imágenes convertidas a Base64");
+    } catch (error) {
+      console.error("Error al convertir imágenes:", error);
+      alert("Error al cargar las imágenes");
+    }
+  };
+
+  const removeImage = (index) => {
+    const newFiles = [...imageFiles];
+    const newPreviews = [...imagePreviews];
+    const newImages = [...showForm.images];
+    
+    newFiles.splice(index, 1);
+    newPreviews.splice(index, 1);
+    newImages.splice(index, 1);
+    
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
+    setShowForm({
+      ...showForm,
+      images: newImages
     });
   };
 
@@ -89,26 +145,20 @@ function AdminPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (showForm.images.length === 0) {
+      alert("Por favor agrega al menos una imagen");
+      return;
+    }
+
     try {
-      // Convertir URLs separadas por comas en array
-      const imageArray = showForm.imageUrls
-        .split(',')
-        .map(url => url.trim())
-        .filter(url => url.length > 0);
-
-      if (imageArray.length === 0) {
-        alert("Por favor ingresa al menos una URL de imagen");
-        return;
-      }
-
-      // Crear objeto del show
+      // Crear objeto del show con imágenes en Base64
       const newShow = {
         title: showForm.title,
         artist: showForm.artist,
         date: showForm.date,
         venue: showForm.venue,
         category: showForm.category,
-        images: imageArray, // Array de URLs locales
+        images: showForm.images, // Base64
         spaces: showForm.spaces.map((space) => ({
           ...space,
           price: Number(space.price),
@@ -117,7 +167,6 @@ function AdminPage() {
         merchandise: showForm.merchandise,
       };
 
-      // Guardar en Firestore
       console.log("Guardando show en Firestore...");
       await addProduct(newShow);
       
@@ -135,7 +184,7 @@ function AdminPage() {
   };
 
   const handleLoadSampleData = async () => {
-    if (window.confirm("¿Cargar productos de ejemplo? Esto agregará 6 shows con imágenes locales.")) {
+    if (window.confirm("¿Cargar productos de ejemplo?")) {
       setLoadingSeed(true);
       try {
         await seedProducts();
@@ -164,10 +213,6 @@ function AdminPage() {
           {loadingSeed ? "Cargando..." : "🌱 Cargar Datos de Ejemplo"}
         </Button>
       </div>
-      
-      <p className="text-center text-muted mb-5">
-        Crea shows con imágenes locales 
-      </p>
 
       {submitted && (
         <Alert variant="success" className="mb-4">
@@ -260,48 +305,46 @@ function AdminPage() {
           </Card.Body>
         </Card>
 
-        {/* IMÁGENES LOCALES */}
+        {/* IMÁGENES DEL DISPOSITIVO */}
         <Card className="shadow mb-4">
           <Card.Body>
-            <h5 className="mb-3">Imágenes del Show (URLs Locales)</h5>
+            <h5 className="mb-3">📸 Imágenes del Show</h5>
             
-            <Alert variant="info" className="mb-3">
-              <strong>📁 Formato:</strong> Las imágenes deben estar en <code>/public/images/shows/</code>
-              <br />
-              <strong>Ejemplo:</strong> /images/shows/metallica-1.jpg, /images/shows/metallica-2.jpg
-            </Alert>
-
             <Form.Group className="mb-3">
-              <Form.Label>URLs de Imágenes (separadas por comas)</Form.Label>
+              <Form.Label>Seleccionar Imágenes (máx. 3)</Form.Label>
               <Form.Control
-                as="textarea"
-                rows={3}
-                name="imageUrls"
-                value={showForm.imageUrls}
-                onChange={handleInputChange}
-                placeholder="/images/shows/metallica-1.jpg, /images/shows/metallica-2.jpg, /images/shows/metallica-3.jpg"
-                required
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageChange}
               />
               <Form.Text className="text-muted">
-                Máximo 3 imágenes. Las URLs deben empezar con /images/
+                Formatos: JPG, PNG, WebP. Las imágenes se guardarán en la base de datos.
               </Form.Text>
             </Form.Group>
 
-            {showForm.imageUrls && (
-              <div className="mt-3">
+            {imagePreviews.length > 0 && (
+              <div>
                 <strong>Vista previa:</strong>
-                <Row className="mt-2">
-                  {showForm.imageUrls.split(',').slice(0, 3).map((url, index) => (
-                    <Col xs={4} key={index}>
-                      <img
-                        src={url.trim()}
-                        alt={`Preview ${index + 1}`}
-                        className="img-fluid rounded"
-                        style={{ height: "150px", objectFit: "cover" }}
-                        onError={(e) => {
-                          e.target.src = '/images/placeholder.jpg';
-                        }}
-                      />
+                <Row className="mt-3">
+                  {imagePreviews.map((preview, index) => (
+                    <Col xs={4} key={index} className="mb-3">
+                      <div className="position-relative">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="img-fluid rounded"
+                          style={{ height: "150px", objectFit: "cover", width: "100%" }}
+                        />
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          className="position-absolute top-0 end-0 m-2"
+                          onClick={() => removeImage(index)}
+                        >
+                          ✕
+                        </Button>
+                      </div>
                     </Col>
                   ))}
                 </Row>

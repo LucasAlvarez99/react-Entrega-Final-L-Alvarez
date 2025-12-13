@@ -1,4 +1,4 @@
-// src/services/productsService.js - MÁXIMA OPTIMIZACIÓN
+// src/services/productsService.js - ARCHIVO COMPLETO CORREGIDO
 import { 
   collection, 
   getDocs, 
@@ -7,14 +7,12 @@ import {
   deleteDoc, 
   doc, 
   query, 
-  where,
-  orderBy,
-  limit
+  where
 } from "firebase/firestore";
 import { db } from "./firebase";
 
 const COLLECTION_NAME = "products";
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hora (antes 30 min)
+const CACHE_DURATION = 60 * 60 * 1000; // 1 hora
 const CACHE_KEY = "olimpo_products_cache";
 const CACHE_VERSION = "v2";
 
@@ -96,18 +94,20 @@ export const getProducts = async (useCache = true) => {
     console.log("🔄 Cargando desde Firestore...");
     const productsRef = collection(db, COLLECTION_NAME);
     
-    const q = query(
-      productsRef, 
-      orderBy("createdAt", "desc"),
-      limit(100) // Aumentado a 100
-    );
-    
-    const snapshot = await getDocs(q);
+    // SIN orderBy para evitar problemas de índice
+    const snapshot = await getDocs(productsRef);
     
     const products = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+    
+    // Ordenar manualmente por fecha (más recientes primero)
+    products.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+      const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+      return dateB - dateA;
+    });
     
     saveToCache(products);
     
@@ -152,8 +152,7 @@ export const getProductsByCategory = async (categoryId) => {
     
     const q = query(
       productsRef, 
-      where("category", "==", categoryId),
-      limit(50)
+      where("category", "==", categoryId)
     );
     
     const snapshot = await getDocs(q);
@@ -244,15 +243,11 @@ export const clearCache = () => {
 export const initializeProducts = async () => {
   console.log("🔥 Firebase conectado");
   
-  const cached = loadFromLocalStorage();
-  if (!cached) {
-    console.log("📡 Pre-cargando productos...");
-    getProducts(false).catch(() => {
-      console.log("⚠️ Pre-carga fallida");
-    });
-  } else {
-    console.log("✅ Productos en cache");
-  }
+  // FORZAR CARGA DESDE FIRESTORE (sin cache)
+  console.log("📡 Cargando productos desde Firestore...");
+  getProducts(false).catch(() => {
+    console.log("⚠️ Pre-carga fallida");
+  });
 };
 
 // ===== ESTADÍSTICAS =====
